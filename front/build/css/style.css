@@ -1,0 +1,52 @@
+.match-status-container {
+  padding-top: 20px;
+  padding-bottom: 20px; }
+  .match-status-container .match-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 160px;
+    border-radius: 10px;
+    background-color: #f3f3f3; }
+
+.letter-selection-container {
+  padding-top: 20px;
+  padding-bottom: 20px; }
+
+.words-section-container {
+  padding-top: 20px;
+  padding-bottom: 20px; }
+  .words-section-container .word-list {
+    width: 100%;
+    height: 120px;
+    border-radius: 10px;
+    background-color: #f3f3f3; }
+    .words-section-container .word-list span {
+      display: block;
+      padding: 15px; }
+
+.word-insert-form {
+  width: 100%;
+  margin-top: 20px; }
+  .word-insert-form input {
+    width: 80%; }
+  .word-insert-form button {
+    width: 20%; }
+
+.letter-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: calc(100% / 13 - 10px);
+  height: 80px;
+  margin: 5px;
+  border-radius: 10px;
+  background-color: #f3f3f3;
+  font-size: 2em; }
+  .letter-button.selected-by-other {
+    background-color: #e9c9c9; }
+  .letter-button.selected-by-me {
+    background-color: #c9e9df; }
+  .letter-button.locked-for-the-match {
+    background-color: #c9e9df; }
