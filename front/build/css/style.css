@@ -43,9 +43,10 @@
   margin: 5px;
   border-radius: 10px;
   background-color: #f3f3f3;
-  font-size: 2em; }
-  .letter-button.selected-by-other {
-    background-color: #e9c9c9; }
+  font-size: 2em;
+  cursor: pointer; }
+  .letter-button.selected-by-others {
+    background-color: #e9e4c9; }
   .letter-button.selected-by-me {
     background-color: #c9e9df; }
   .letter-button.locked-for-the-match {

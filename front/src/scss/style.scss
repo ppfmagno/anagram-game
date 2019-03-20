@@ -59,9 +59,10 @@
   border-radius: 10px;
   background-color: #f3f3f3;
   font-size: 2em;
+  cursor: pointer;
 
-  &.selected-by-other {
-    background-color: #e9c9c9;
+  &.selected-by-others {
+    background-color: #e9e4c9;
   }
 
   &.selected-by-me {
