@@ -2,9 +2,10 @@ const gulp = require('gulp');
 const browserSync = require('browser-sync');
 const sass = require('gulp-sass');
 const autoprefixer = require('gulp-autoprefixer');
-const babel = require('gulp-babel');
 const uglify = require('gulp-uglify');
 const browserify = require('gulp-bro');
+const babelify = require('babelify');
+const concat = require('gulp-concat');
 
 const paths = {
   views: {
@@ -26,7 +27,8 @@ function serve() {
     open: false,
     server: {
       baseDir: './build'
-    }
+    },
+    port: 8080
   });
 
   watch();
@@ -50,14 +52,14 @@ function styles() {
 
 function scripts() {
   return gulp.src(paths.scripts.src)
-    .pipe(babel({
-      presets: ['@babel/env']
-    }))
     .pipe(browserify({
-      insertGlobals: true,
-      debug: false
+      transform: [
+        babelify.configure({ presets: ['@babel/preset-env'] })
+      ],
+      global: true 
     }))
     // .pipe(uglify())
+    .pipe(concat('index.js'))
     .pipe(gulp.dest(paths.scripts.dest));
 }
 
