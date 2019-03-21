@@ -28,6 +28,7 @@ function serve() {
     server: {
       baseDir: './build'
     },
+    ghostMode: false,
     port: 8080
   });
 

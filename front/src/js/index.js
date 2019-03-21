@@ -1,15 +1,19 @@
+import io from 'socket.io-client';
+
+const socket = io('http://localhost:3000');
 const matchStatus = document.querySelector('.match-status');
 const letterButtons = document.querySelectorAll('.letter-button');
 const wordList = document.querySelector('.word-list');
 const wordInsertForm = document.querySelector('.word-insert-form');
-const othersLetters = ['a'];
 const myLetters = [];
 const myWords = [];
+let othersLetters = [];
 
 letterButtons.forEach(btn => {
   btn.addEventListener('click', e => {
     const letter = e.target.id.slice(-1).toLowerCase();
     addToMyLetters(letter, myLetters);
+    sendLetters(myLetters);
     upDateSelectionView();
   });
 });
@@ -90,3 +94,14 @@ const upDateSelectionView = () => {
 const upDateWordsView = () => {
   wordList.querySelector('span').innerHTML = myWords.join(', ');
 }
+
+const sendLetters = (letters) => {
+  socket.emit('set letters', letters)
+}
+
+socket.on('match start', msg => console.log(msg.foo));
+socket.on('set letters', letters => {
+  othersLetters = letters;
+  console.log(othersLetters);
+  upDateSelectionView();
+});

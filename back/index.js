@@ -3,39 +3,57 @@ const io = require('socket.io')(server);
 
 // TODO: change to 4 later
 const MAX_PLAYERS = 2;
-let matchRooms = [];
 
 io.on('connection', socket => {
-  let allRooms = Object.keys(io.sockets.adapter.rooms);
-  matchRooms = allRooms.filter((room) => room.match('match-room'));
-  console.log(matchRooms)
+  let roomName = allocatePlayer(socket);
   
-  if (matchRooms.length === 0) {
-    socket.join('match-room-0');
-  } else {
-    for (let i = 0; i < matchRooms.length; i++) {
-      let players = io.sockets.adapter.rooms['match-room-' + i].length;
+  if (io.sockets.adapter.rooms[roomName].length === MAX_PLAYERS) {
+    io.to(roomName).emit('match start', { foo: 'bar '});
+  }
+
+  socket.on('set letters', letters => {
+    let room = getRoomName(socket);
+    socket.broadcast.to(room).emit('set letters', letters);
+  });
+});
+
+const getRoomName = player => {
+  let playerRooms = Object.keys(player.rooms);
+  return playerRooms.filter(room => room.match('match-room'));
+}
+
+const allocatePlayer = player => {
+  let wasPlayerAllocated = false;
+  let matchRooms = countRooms();
+  let designatedRoom = 'match-room-';
+
+  if (matchRooms === 0) {
+    designatedRoom += 0;
+    player.join(designatedRoom);
+    wasPlayerAllocated = true;
+    return designatedRoom;
+  }
+  if (matchRooms > 0) {
+    for (let i = 0; i < matchRooms; i++) {
+      let players = io.sockets.adapter.rooms[`match-room-${i}`].length;
       if (players < MAX_PLAYERS) {
-        socket.join('match-room-' + i);
-        i = matchRooms.length;
-      } else {
-        // i = matchRooms.length;
-        // socket.join('match-room-' + matchRooms.length);
+        designatedRoom += i;
+        player.join(designatedRoom);
+        wasPlayerAllocated = true;
+        return designatedRoom;
       }
     }
+    if (!wasPlayerAllocated) {
+      designatedRoom += matchRooms;
+      player.join(designatedRoom);
+      return designatedRoom;
+    }
   }
-  console.log(Object.keys(socket.rooms));
-  
-  // let room = io.sockets.adapter.rooms['match-room-' + matchRooms.length];
-  // if (room.length >= MAX_PLAYERS) rooms++;
-  // socket.on('disconnecting', () => {
-  //   let rooms = Object.keys(socket.rooms);
-  //   rooms.forEach(room => {
-  //     if (io.sockets.adapter.rooms[room].length < 2) {
-  //       rooms--;
-  //     }
-  //   });
-  // });
-});
+}
+
+const countRooms = () => {
+  let allRooms = Object.keys(io.sockets.adapter.rooms);
+  return allRooms.filter(room => room.match('match-room')).length;
+}
 
 server.listen(3000);

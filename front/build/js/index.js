@@ -1,121 +1,4 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-"use strict";
-
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
-
-var matchStatus = document.querySelector('.match-status');
-var letterButtons = document.querySelectorAll('.letter-button');
-var wordList = document.querySelector('.word-list');
-var wordInsertForm = document.querySelector('.word-insert-form');
-var othersLetters = ['a'];
-var myLetters = [];
-var myWords = [];
-letterButtons.forEach(function (btn) {
-  btn.addEventListener('click', function (e) {
-    var letter = e.target.id.slice(-1).toLowerCase();
-    addToMyLetters(letter, myLetters);
-    upDateSelectionView();
-  });
-});
-wordInsertForm.addEventListener('submit', function (e) {
-  e.preventDefault();
-  var input = wordInsertForm.querySelector('input');
-  addToMyWords(input.value, myWords);
-  upDateWordsView();
-  input.value = '';
-});
-
-var addToMyLetters = function addToMyLetters(letter, myLetters) {
-  if (!myLetters.includes(letter) && !othersLetters.includes(letter)) {
-    myLetters.push(letter);
-  }
-
-  if (myLetters.length > 2) {
-    myLetters.shift();
-  }
-};
-
-var addToMyWords = function addToMyWords(word, myWords) {
-  var selectedLetters = [].concat(myLetters, othersLetters);
-  word = word.toLowerCase();
-
-  if (isValidWord(word, selectedLetters)) {
-    myWords.push(word);
-  }
-
-  console.log(myWords);
-};
-
-var isValidWord = function isValidWord(word, selectedLetters) {
-  if (selectedLetters.includes('a')) {
-    selectedLetters = [].concat(_toConsumableArray(selectedLetters), ['á', 'â', 'ã']);
-  }
-
-  if (selectedLetters.includes('e')) {
-    selectedLetters = [].concat(_toConsumableArray(selectedLetters), ['é', 'ê']);
-  }
-
-  if (selectedLetters.includes('i')) {
-    selectedLetters = [].concat(_toConsumableArray(selectedLetters), ['í']);
-  }
-
-  if (selectedLetters.includes('o')) {
-    selectedLetters = [].concat(_toConsumableArray(selectedLetters), ['ó', 'ô', 'õ']);
-  }
-
-  if (selectedLetters.includes('u')) {
-    selectedLetters = [].concat(_toConsumableArray(selectedLetters), ['ú']);
-  }
-
-  if (selectedLetters.includes('c')) {
-    selectedLetters = [].concat(_toConsumableArray(selectedLetters), ['ç']);
-  }
-
-  var isValid = true;
-
-  for (var i = 0; i < word.length; i++) {
-    if (!selectedLetters.includes(word[i])) {
-      isValid = false;
-      return isValid;
-    }
-  }
-
-  return isValid;
-};
-
-var upDateSelectionView = function upDateSelectionView() {
-  letterButtons.forEach(function (btn) {
-    var btnLetter = btn.id.slice(-1).toLowerCase();
-    var isOnMyLetters = myLetters.includes(btnLetter);
-    var isOnOtherLetters = othersLetters.includes(btnLetter);
-
-    if (isOnMyLetters && !btn.className.includes('selected')) {
-      btn.classList.add('selected-by-me');
-    } else if (!isOnMyLetters) {
-      btn.classList.remove('selected-by-me');
-    }
-
-    if (isOnOtherLetters && !btn.className.includes('selected')) {
-      btn.classList.add('selected-by-others');
-    } else if (!isOnOtherLetters) {
-      btn.classList.remove('selected-by-others');
-    }
-  });
-};
-
-var upDateWordsView = function upDateWordsView() {
-  wordList.querySelector('span').innerHTML = myWords.join(', ');
-};
-
-},{}]},{},[1]);
-
-(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 module.exports = after
 
 function after(count, callback, err_cb) {
@@ -8555,6 +8438,131 @@ var _socket = _interopRequireDefault(require("socket.io-client"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
 var socket = (0, _socket.default)('http://localhost:3000');
+var matchStatus = document.querySelector('.match-status');
+var letterButtons = document.querySelectorAll('.letter-button');
+var wordList = document.querySelector('.word-list');
+var wordInsertForm = document.querySelector('.word-insert-form');
+var myLetters = [];
+var myWords = [];
+var othersLetters = [];
+letterButtons.forEach(function (btn) {
+  btn.addEventListener('click', function (e) {
+    var letter = e.target.id.slice(-1).toLowerCase();
+    addToMyLetters(letter, myLetters);
+    sendLetters(myLetters);
+    upDateSelectionView();
+  });
+});
+wordInsertForm.addEventListener('submit', function (e) {
+  e.preventDefault();
+  var input = wordInsertForm.querySelector('input');
+  addToMyWords(input.value, myWords);
+  upDateWordsView();
+  input.value = '';
+});
+
+var addToMyLetters = function addToMyLetters(letter, myLetters) {
+  if (!myLetters.includes(letter) && !othersLetters.includes(letter)) {
+    myLetters.push(letter);
+  }
+
+  if (myLetters.length > 2) {
+    myLetters.shift();
+  }
+};
+
+var addToMyWords = function addToMyWords(word, myWords) {
+  var selectedLetters = [].concat(myLetters, _toConsumableArray(othersLetters));
+  word = word.toLowerCase();
+
+  if (isValidWord(word, selectedLetters)) {
+    myWords.push(word);
+  }
+
+  console.log(myWords);
+};
+
+var isValidWord = function isValidWord(word, selectedLetters) {
+  if (selectedLetters.includes('a')) {
+    selectedLetters = [].concat(_toConsumableArray(selectedLetters), ['á', 'â', 'ã']);
+  }
+
+  if (selectedLetters.includes('e')) {
+    selectedLetters = [].concat(_toConsumableArray(selectedLetters), ['é', 'ê']);
+  }
+
+  if (selectedLetters.includes('i')) {
+    selectedLetters = [].concat(_toConsumableArray(selectedLetters), ['í']);
+  }
+
+  if (selectedLetters.includes('o')) {
+    selectedLetters = [].concat(_toConsumableArray(selectedLetters), ['ó', 'ô', 'õ']);
+  }
+
+  if (selectedLetters.includes('u')) {
+    selectedLetters = [].concat(_toConsumableArray(selectedLetters), ['ú']);
+  }
+
+  if (selectedLetters.includes('c')) {
+    selectedLetters = [].concat(_toConsumableArray(selectedLetters), ['ç']);
+  }
+
+  var isValid = true;
+
+  for (var i = 0; i < word.length; i++) {
+    if (!selectedLetters.includes(word[i])) {
+      isValid = false;
+      return isValid;
+    }
+  }
+
+  return isValid;
+};
+
+var upDateSelectionView = function upDateSelectionView() {
+  letterButtons.forEach(function (btn) {
+    var btnLetter = btn.id.slice(-1).toLowerCase();
+    var isOnMyLetters = myLetters.includes(btnLetter);
+    var isOnOtherLetters = othersLetters.includes(btnLetter);
+
+    if (isOnMyLetters && !btn.className.includes('selected')) {
+      btn.classList.add('selected-by-me');
+    } else if (!isOnMyLetters) {
+      btn.classList.remove('selected-by-me');
+    }
+
+    if (isOnOtherLetters && !btn.className.includes('selected')) {
+      btn.classList.add('selected-by-others');
+    } else if (!isOnOtherLetters) {
+      btn.classList.remove('selected-by-others');
+    }
+  });
+};
+
+var upDateWordsView = function upDateWordsView() {
+  wordList.querySelector('span').innerHTML = myWords.join(', ');
+};
+
+var sendLetters = function sendLetters(letters) {
+  socket.emit('set letters', letters);
+};
+
+socket.on('match start', function (msg) {
+  return console.log(msg.foo);
+});
+socket.on('set letters', function (letters) {
+  othersLetters = letters;
+  console.log(othersLetters);
+  upDateSelectionView();
+});
 
 },{"socket.io-client":35}]},{},[45]);
