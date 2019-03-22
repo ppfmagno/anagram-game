@@ -5,8 +5,9 @@ const matchStatus = document.querySelector('.match-status');
 const letterButtons = document.querySelectorAll('.letter-button');
 const wordList = document.querySelector('.word-list');
 const wordInsertForm = document.querySelector('.word-insert-form');
-const myLetters = [];
 const myWords = [];
+let playerId;
+let myLetters = [];
 let othersLetters = [];
 
 letterButtons.forEach(btn => {
@@ -96,12 +97,22 @@ const upDateWordsView = () => {
 }
 
 const sendLetters = (letters) => {
-  socket.emit('set letters', letters)
+  const newLetters = [];
+  letters.forEach(letter => newLetters.push({ playerId, letter }));
+  socket.emit('set letters', newLetters);
 }
 
+socket.on('connect', () => playerId = socket.id);
 socket.on('match start', msg => console.log(msg.foo));
 socket.on('set letters', letters => {
-  othersLetters = letters;
-  console.log(othersLetters);
+  othersLetters = letters.map(letter => {
+    if (letter.playerId !== playerId) return letter.letter;
+  });
+  myLetters = letters.map(letter => {
+    if (letter.playerId === playerId) return letter.letter;
+  });
+  myLetters = myLetters.filter(letter => letter !== undefined);
+  console.log(myLetters);
+
   upDateSelectionView();
 });

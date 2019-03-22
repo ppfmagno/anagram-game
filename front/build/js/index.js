@@ -8451,8 +8451,9 @@ var matchStatus = document.querySelector('.match-status');
 var letterButtons = document.querySelectorAll('.letter-button');
 var wordList = document.querySelector('.word-list');
 var wordInsertForm = document.querySelector('.word-insert-form');
-var myLetters = [];
 var myWords = [];
+var playerId;
+var myLetters = [];
 var othersLetters = [];
 letterButtons.forEach(function (btn) {
   btn.addEventListener('click', function (e) {
@@ -8481,7 +8482,7 @@ var addToMyLetters = function addToMyLetters(letter, myLetters) {
 };
 
 var addToMyWords = function addToMyWords(word, myWords) {
-  var selectedLetters = [].concat(myLetters, _toConsumableArray(othersLetters));
+  var selectedLetters = [].concat(_toConsumableArray(myLetters), _toConsumableArray(othersLetters));
   word = word.toLowerCase();
 
   if (isValidWord(word, selectedLetters)) {
@@ -8553,15 +8554,33 @@ var upDateWordsView = function upDateWordsView() {
 };
 
 var sendLetters = function sendLetters(letters) {
-  socket.emit('set letters', letters);
+  var newLetters = [];
+  letters.forEach(function (letter) {
+    return newLetters.push({
+      playerId: playerId,
+      letter: letter
+    });
+  });
+  socket.emit('set letters', newLetters);
 };
 
+socket.on('connect', function () {
+  return playerId = socket.id;
+});
 socket.on('match start', function (msg) {
   return console.log(msg.foo);
 });
 socket.on('set letters', function (letters) {
-  othersLetters = letters;
-  console.log(othersLetters);
+  othersLetters = letters.map(function (letter) {
+    if (letter.playerId !== playerId) return letter.letter;
+  });
+  myLetters = letters.map(function (letter) {
+    if (letter.playerId === playerId) return letter.letter;
+  });
+  myLetters = myLetters.filter(function (letter) {
+    return letter !== undefined;
+  });
+  console.log(myLetters);
   upDateSelectionView();
 });
 

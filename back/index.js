@@ -2,25 +2,39 @@ const server = require('http').createServer();
 const io = require('socket.io')(server);
 
 // TODO: change to 4 later
-const MAX_PLAYERS = 2;
+const MAX_PLAYERS = 3;
+const rooms = io.sockets.adapter.rooms;
 
 io.on('connection', socket => {
   let roomName = allocatePlayer(socket);
+  sendLetters(roomName);
   
   if (io.sockets.adapter.rooms[roomName].length === MAX_PLAYERS) {
     io.to(roomName).emit('match start', { foo: 'bar '});
   }
 
-  socket.on('set letters', letters => {
-    let room = getRoomName(socket);
-    socket.broadcast.to(room).emit('set letters', letters);
+  socket.on('set letters', newLetters => {
+    const playerId = socket.id;
+    // let roomName = getRoomName(socket);
+    let othersLetters = rooms[roomName].letters.filter(letter => letter.playerId !== playerId);
+    rooms[roomName].letters = [...othersLetters, ...newLetters]
+    sendLetters(roomName);
+  });
+
+  socket.on('disconnecting', reason => {
+    console.log()
   });
 });
 
-const getRoomName = player => {
-  let playerRooms = Object.keys(player.rooms);
-  return playerRooms.filter(room => room.match('match-room'));
+const sendLetters = roomName => {
+  if (rooms[roomName].letters.length > 0)
+    io.to(roomName).emit('set letters', rooms[roomName].letters);
 }
+
+// const getRoomName = player => {
+//   let playerRooms = Object.keys(player.rooms);
+//   return playerRooms.filter(room => room.match('match-room'));
+// }
 
 const allocatePlayer = player => {
   let wasPlayerAllocated = false;
@@ -30,7 +44,8 @@ const allocatePlayer = player => {
   if (matchRooms === 0) {
     designatedRoom += 0;
     player.join(designatedRoom);
-    wasPlayerAllocated = true;
+    // create letters attribute in new room to store match letters 
+    io.sockets.adapter.rooms[designatedRoom].letters = [];
     return designatedRoom;
   }
   if (matchRooms > 0) {
@@ -46,6 +61,8 @@ const allocatePlayer = player => {
     if (!wasPlayerAllocated) {
       designatedRoom += matchRooms;
       player.join(designatedRoom);
+      // create letters attribute in new room to store match letters 
+      io.sockets.adapter.rooms[designatedRoom].letters = [];
       return designatedRoom;
     }
   }
