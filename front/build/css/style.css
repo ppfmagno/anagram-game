@@ -1,30 +1,32 @@
 .match-logger-container {
-  padding-top: 20px;
-  padding-bottom: 20px; }
+  padding-top: 15px;
+  padding-bottom: 15px; }
   .match-logger-container .match-logger {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: 160px;
+    height: 120px;
     border-radius: 10px;
-    background-color: #f3f3f3; }
+    background-color: #f3f3f3;
+    font-size: 1.5em; }
 
 .letter-selection-container {
-  padding-top: 20px;
-  padding-bottom: 20px; }
+  padding-top: 15px;
+  padding-bottom: 15px; }
 
 .words-section-container {
-  padding-top: 20px;
-  padding-bottom: 20px; }
+  padding-top: 15px;
+  padding-bottom: 15px; }
   .words-section-container .word-list {
     width: 100%;
-    height: 120px;
+    height: 100px;
     border-radius: 10px;
     background-color: #f3f3f3; }
     .words-section-container .word-list span {
       display: block;
-      padding: 15px; }
+      padding: 10px 20px;
+      font-size: 1.25em; }
 
 .word-insert-form {
   width: 100%;
