@@ -8461,10 +8461,10 @@ var matchStatus = {
   finished: 'finished',
   now: undefined
 };
-var myWords = [];
 var playerId;
-var myLetters = [];
 var othersLetters = [];
+var myLetters = [];
+var myWords = [];
 letterButtons.forEach(function (btn) {
   btn.addEventListener('click', function (e) {
     if (matchStatus.now === matchStatus.waiting || matchStatus.now === matchStatus.ready) {
@@ -8591,7 +8591,24 @@ var countToStart = function countToStart() {
 
     if (difference < 0) {
       clearInterval(timer);
-      matchLogger.innerHTML = 'Começou! Escreva suas palavras!';
+      countToStop();
+    }
+  }, 1);
+};
+
+var countToStop = function countToStop() {
+  var end = new Date();
+  end.setSeconds(end.getSeconds() + 10);
+  var timer = setInterval(function () {
+    var now = new Date().getTime();
+    var difference = end - now;
+    var seconds = Math.floor(difference % (1000 * 60) / 1000);
+    var milliseconds = Math.floor(difference % 100);
+    matchLogger.innerHTML = "Escreva suas palavras!!</br>".concat(('0' + seconds).slice(-2), ":").concat(('0' + milliseconds).slice(-2));
+
+    if (difference < 0) {
+      clearInterval(timer);
+      matchLogger.innerHTML = 'Contando pontos...';
     }
   }, 1);
 };
@@ -8599,9 +8616,9 @@ var countToStart = function countToStart() {
 socket.on('connect', function () {
   playerId = socket.id;
   matchStatus.now = matchStatus.waiting;
-});
-socket.on('match start', function (msg) {
-  return console.log(msg.foo);
+  matchLogger.innerHTML = 'Aguardando jogadores...';
+  myWords = [];
+  upDateWordsView();
 });
 socket.on('set letters', function (letters) {
   othersLetters = letters.map(function (letter) {
@@ -8617,7 +8634,6 @@ socket.on('set letters', function (letters) {
 });
 socket.on('ready', function () {
   matchStatus.now = matchStatus.ready;
-  console.log('start in 5"');
   countToStart();
 });
 socket.on('locked', function () {

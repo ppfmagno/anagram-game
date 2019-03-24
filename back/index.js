@@ -1,5 +1,6 @@
 const server = require('http').createServer();
 const io = require('socket.io')(server);
+const axios = require('axios');
 
 const rooms = io.sockets.adapter.rooms; // 'shortcut' (reference) to rooms
 const MAX_PLAYERS = 3; // max number of players for room
@@ -47,12 +48,23 @@ io.on('connection', socket => {
 
   socket.on('set words', words => {
     if (rooms[roomName].status === matchStatus.stop) {
+      // TODO: filter repeated words from each user (back and front to be sure)
       rooms[roomName].words.push(words);
+      if (rooms[roomName].words.length === rooms[roomName].activePlayers.length) {
+        checkWords(roomName);
+      }
     }
   });
 
   socket.on('disconnecting', reason => {
     rooms[roomName].letters = rooms[roomName].letters.filter(letter => letter.playerId !== playerId);
+    rooms[roomName].activePlayers = rooms[roomName].activePlayers.filter(id => id !== playerId);
+    // if the room gets empty, stop all timers
+    if (rooms[roomName].activePlayers.length === 0) {
+      for (const timerName in rooms[roomName].timers) {
+        clearTimeout(rooms[roomName].timers[timerName]);
+      }
+    }
     sendLetters(roomName);
   });
 });
@@ -66,22 +78,24 @@ const allocatePlayer = player => {
   let matchRooms = countRooms();
   let designatedRoom = 'match-room-';
 
-  // TODO: implement logic to allocate player in roon only if match has not started yet
-
   // if there is no room created, join player in match-room-0
-  if (matchRooms === 0) {
+  if (matchRooms === 0 || !rooms['match-room-0']) {
     designatedRoom += 0;
     player.join(designatedRoom);
     createNewRoom(designatedRoom);
+    rooms[designatedRoom].activePlayers.push(player.id);
     return designatedRoom;
   }
   if (matchRooms > 0) {
     // go through all created rooms to see if there is one vacant
     for (let i = 0; i < matchRooms; i++) {
+      // console.log(rooms)
       let players = rooms[`match-room-${i}`].length;
-      if (players < MAX_PLAYERS) {
+      let roomStatus = rooms[`match-room-${i}`].status;
+      if (players < MAX_PLAYERS && roomStatus === matchStatus.waiting) {
         designatedRoom += i;
         player.join(designatedRoom);
+        rooms[designatedRoom].activePlayers.push(player.id);
         wasPlayerAllocated = true;
         return designatedRoom;
       }
@@ -90,6 +104,7 @@ const allocatePlayer = player => {
       designatedRoom += matchRooms;
       player.join(designatedRoom);
       createNewRoom(designatedRoom);
+      rooms[designatedRoom].activePlayers.push(player.id);
       return designatedRoom;
     }
   }
@@ -101,17 +116,22 @@ const createNewRoom = roomName => {
   // letters attribute in new room to store match letters,
   rooms[roomName].letters = [];
   // words attribute to store match words
-  // (this is an array of objects with player id an its words)
+  // (this is an array of objects with player id an its words),
   rooms[roomName].words = []
-  // words to verify attribute
-  // (this is an aray of uniques with the words to be verified on dictionary api)
+  // words to be verified attribute
+  // (this is an aray of uniques with the words to be verified on dictionary api),
   rooms[roomName].wordsToCheck = [];
-  // TODO: add active players logic to verify if the total number of players that sent words is the same as rooms active players
-  // TODO: it has to decrement if player leaves room, just to be sure 
+  // active players attribute
+  // (this is an array of the sockets' ids that are connected),
+  rooms[roomName].activePlayers = [];
+  // timers attribute
+  // (this is an object of timers to control the match)
+  rooms[roomName].timers = {};
+
 }
 
 const countDownToLock = roomName => {
-  setTimeout(() => {
+  rooms[roomName].timers.timerToLock = setTimeout(() => {
     rooms[roomName].status = matchStatus.locked;
     io.to(roomName).emit(rooms[roomName].status);
     countDownToStart(roomName);
@@ -119,7 +139,7 @@ const countDownToLock = roomName => {
 }
 
 const countDownToStart = roomName => {
-  setTimeout(() => {
+  rooms[roomName].timers.timerToStart = setTimeout(() => {
     rooms[roomName].status = matchStatus.start;
     io.to(roomName).emit(rooms[roomName].status);
     countDownToStop(roomName);
@@ -127,15 +147,32 @@ const countDownToStart = roomName => {
 }
 
 const countDownToStop = roomName => {
-  setTimeout(() => {
+  rooms[roomName].timers.timerToStop = setTimeout(() => {
     rooms[roomName].status = matchStatus.stop;
     io.to(roomName).emit(rooms[roomName].status);
   }, WORDS_TIME)
 }
 
 const checkWords = roomName => {
-  // go through each rooms[roomName].words and get unique words to check
-  rooms[roomName].wordsToCheck = [... new Set([...words.words])]
+  const url = 'http://dicionario-aberto.net/search-json/';
+  let allWords = [];
+  for (const wordGroup of rooms[roomName].words) {
+    allWords = [...allWords, ...wordGroup.words]
+  }
+  rooms[roomName].wordsToCheck = [... new Set([...allWords])];
+  rooms[roomName].wordsToCheck.forEach(word => {
+    axios.request({
+      method: 'get',
+      baseURL: url,
+      url: encodeURI(word),
+      data: { word },
+    })
+    .then(res => console.log(res.data))
+    .catch(err => {
+      if (err.response.status === 404)
+      console.log(JSON.parse(err.config.data).word);
+    });
+  });
 }
 
 const countRooms = () => {
