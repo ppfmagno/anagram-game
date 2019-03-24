@@ -8446,29 +8446,44 @@ function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.
 
 function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
 
-var socket = (0, _socket.default)('http://localhost:3000');
-var matchStatus = document.querySelector('.match-status');
+var socket = (0, _socket.default)('localhost:3000');
+var matchLogger = document.querySelector('.match-logger');
 var letterButtons = document.querySelectorAll('.letter-button');
 var wordList = document.querySelector('.word-list');
 var wordInsertForm = document.querySelector('.word-insert-form');
+var matchStatus = {
+  waiting: 'waiting',
+  ready: 'ready',
+  locked: 'locked',
+  start: 'start',
+  stop: 'stop',
+  checking: 'checking',
+  finished: 'finished',
+  now: undefined
+};
 var myWords = [];
 var playerId;
 var myLetters = [];
 var othersLetters = [];
 letterButtons.forEach(function (btn) {
   btn.addEventListener('click', function (e) {
-    var letter = e.target.id.slice(-1).toLowerCase();
-    addToMyLetters(letter, myLetters);
-    sendLetters(myLetters);
-    upDateSelectionView();
+    if (matchStatus.now === matchStatus.waiting || matchStatus.now === matchStatus.ready) {
+      var letter = e.target.id.slice(-1).toLowerCase();
+      addToMyLetters(letter, myLetters);
+      sendLetters(myLetters);
+      upDateSelectionView();
+    }
   });
 });
 wordInsertForm.addEventListener('submit', function (e) {
   e.preventDefault();
-  var input = wordInsertForm.querySelector('input');
-  addToMyWords(input.value, myWords);
-  upDateWordsView();
-  input.value = '';
+
+  if (matchStatus.now === matchStatus.start) {
+    var input = wordInsertForm.querySelector('input');
+    addToMyWords(input.value, myWords);
+    upDateWordsView();
+    input.value = '';
+  }
 });
 
 var addToMyLetters = function addToMyLetters(letter, myLetters) {
@@ -8564,8 +8579,26 @@ var sendLetters = function sendLetters(letters) {
   socket.emit('set letters', newLetters);
 };
 
+var countToStart = function countToStart() {
+  var end = new Date();
+  end.setSeconds(end.getSeconds() + 5);
+  var timer = setInterval(function () {
+    var now = new Date().getTime();
+    var difference = end - now;
+    var seconds = Math.floor(difference % (1000 * 60) / 1000);
+    var milliseconds = Math.floor(difference % 100);
+    matchLogger.innerHTML = "".concat(('0' + seconds).slice(-2), ":").concat(('0' + milliseconds).slice(-2), " para o in\xEDcio da partida!");
+
+    if (difference < 0) {
+      clearInterval(timer);
+      matchLogger.innerHTML = 'Começou! Escreva suas palavras!';
+    }
+  }, 1);
+};
+
 socket.on('connect', function () {
-  return playerId = socket.id;
+  playerId = socket.id;
+  matchStatus.now = matchStatus.waiting;
 });
 socket.on('match start', function (msg) {
   return console.log(msg.foo);
@@ -8580,8 +8613,32 @@ socket.on('set letters', function (letters) {
   myLetters = myLetters.filter(function (letter) {
     return letter !== undefined;
   });
-  console.log(myLetters);
   upDateSelectionView();
+});
+socket.on('ready', function () {
+  matchStatus.now = matchStatus.ready;
+  console.log('start in 5"');
+  countToStart();
+});
+socket.on('locked', function () {
+  matchStatus.now = matchStatus.locked;
+  console.log('start in 2"');
+});
+socket.on('start', function () {
+  matchStatus.now = matchStatus.start;
+  wordInsertForm.querySelector('input').focus();
+  console.log('started!');
+});
+socket.on('stop', function () {
+  var wordsToSend = {
+    id: playerId,
+    words: myWords
+  };
+  matchStatus.now = matchStatus.stop;
+  socket.emit('set words', wordsToSend);
+});
+socket.on('checking', function () {
+  matchStatus.now = matchStatus.checking;
 });
 
 },{"socket.io-client":35}]},{},[45]);

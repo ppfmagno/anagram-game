@@ -1,7 +1,7 @@
-.match-status-container {
+.match-logger-container {
   padding-top: 20px;
   padding-bottom: 20px; }
-  .match-status-container .match-status {
+  .match-logger-container .match-logger {
     display: flex;
     align-items: center;
     justify-content: center;

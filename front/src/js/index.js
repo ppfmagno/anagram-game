@@ -1,10 +1,20 @@
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:3000');
-const matchStatus = document.querySelector('.match-status');
+const socket = io('localhost:3000');
+const matchLogger = document.querySelector('.match-logger');
 const letterButtons = document.querySelectorAll('.letter-button');
 const wordList = document.querySelector('.word-list');
 const wordInsertForm = document.querySelector('.word-insert-form');
+const matchStatus = {
+  waiting: 'waiting',
+  ready: 'ready',
+  locked: 'locked',
+  start: 'start',
+  stop: 'stop',
+  checking: 'checking',
+  finished: 'finished',
+  now: undefined
+};
 const myWords = [];
 let playerId;
 let myLetters = [];
@@ -12,19 +22,23 @@ let othersLetters = [];
 
 letterButtons.forEach(btn => {
   btn.addEventListener('click', e => {
-    const letter = e.target.id.slice(-1).toLowerCase();
-    addToMyLetters(letter, myLetters);
-    sendLetters(myLetters);
-    upDateSelectionView();
+    if (matchStatus.now === matchStatus.waiting || matchStatus.now === matchStatus.ready) {
+      const letter = e.target.id.slice(-1).toLowerCase();
+      addToMyLetters(letter, myLetters);
+      sendLetters(myLetters);
+      upDateSelectionView();
+    }
   });
 });
 
 wordInsertForm.addEventListener('submit', (e) => {
   e.preventDefault();
-  const input = wordInsertForm.querySelector('input');
-  addToMyWords(input.value, myWords);
-  upDateWordsView();
-  input.value = '';
+  if (matchStatus.now === matchStatus.start) {
+    const input = wordInsertForm.querySelector('input');
+    addToMyWords(input.value, myWords);
+    upDateWordsView();
+    input.value = '';
+  }
 });
 
 const addToMyLetters = (letter, myLetters) => {
@@ -102,8 +116,31 @@ const sendLetters = (letters) => {
   socket.emit('set letters', newLetters);
 }
 
-socket.on('connect', () => playerId = socket.id);
+const countToStart = () => {
+  const end = new Date();
+  end.setSeconds(end.getSeconds() + 5);
+  const timer = setInterval(() => {
+    const now = new Date().getTime();
+    const difference = end - now;
+    const seconds = Math.floor((difference % (1000 * 60) / 1000));
+    const milliseconds = Math.floor(difference % 100);
+
+    matchLogger.innerHTML = `${('0' + seconds).slice(-2)}:${('0' + milliseconds).slice(-2)} para o início da partida!`;
+
+    if (difference < 0) {
+      clearInterval(timer);
+      matchLogger.innerHTML = 'Começou! Escreva suas palavras!';
+    }
+  }, 1);
+}
+
+socket.on('connect', () => {
+  playerId = socket.id;
+  matchStatus.now = matchStatus.waiting;
+});
+
 socket.on('match start', msg => console.log(msg.foo));
+
 socket.on('set letters', letters => {
   othersLetters = letters.map(letter => {
     if (letter.playerId !== playerId) return letter.letter;
@@ -112,7 +149,32 @@ socket.on('set letters', letters => {
     if (letter.playerId === playerId) return letter.letter;
   });
   myLetters = myLetters.filter(letter => letter !== undefined);
-  console.log(myLetters);
-
   upDateSelectionView();
+});
+
+socket.on('ready', () => {
+  matchStatus.now = matchStatus.ready;
+  console.log('start in 5"');
+  countToStart();
+});
+
+socket.on('locked', () => {
+  matchStatus.now = matchStatus.locked;
+  console.log('start in 2"');
+});
+
+socket.on('start', () => {
+  matchStatus.now = matchStatus.start;
+  wordInsertForm.querySelector('input').focus();
+  console.log('started!');
+});
+
+socket.on('stop', () => {
+  const wordsToSend = { id: playerId, words: myWords }
+  matchStatus.now = matchStatus.stop;
+  socket.emit('set words', wordsToSend);
+});
+
+socket.on('checking', () => {
+  matchStatus.now = matchStatus.checking;
 });
