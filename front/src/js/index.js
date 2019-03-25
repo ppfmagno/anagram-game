@@ -56,7 +56,6 @@ const addToMyWords = (word, myWords) => {
   if (isValidWord(word, selectedLetters) && !myWords.includes(word)) {
     myWords.push(word);
   }
-  console.log(myWords);
 }
 
 const isValidWord = (word, selectedLetters) => {
@@ -110,7 +109,7 @@ const upDateWordsView = () => {
   wordList.querySelector('span').innerHTML = myWords.join(', ');
 }
 
-const sendLetters = (letters) => {
+const sendLetters = letters => {
   const newLetters = [];
   letters.forEach(letter => newLetters.push({ playerId, letter }));
   socket.emit('set letters', newLetters);
@@ -152,6 +151,19 @@ const countToStop = () => {
   }, 1);
 }
 
+const showScores = scores => {
+  const strings = [];
+  let player = 1;
+  scores.forEach(score => {
+    if (score.id === playerId) {
+      strings.push(`Sua pontuação: ${score.points} - suas palavras válidas: ${score.words.join(', ')}`);
+    } else {
+      strings.push(`Jogador ${player++}: ${score.points} - palavras válidas: ${score.words.join(', ')}`)
+    }
+  });
+  matchLogger.innerHTML = strings.join('</br>');
+}
+
 socket.on('connect', () => {
   playerId = socket.id;
   matchStatus.now = matchStatus.waiting;
@@ -178,13 +190,11 @@ socket.on('ready', () => {
 
 socket.on('locked', () => {
   matchStatus.now = matchStatus.locked;
-  console.log('start in 2"');
 });
 
 socket.on('start', () => {
   matchStatus.now = matchStatus.start;
   wordInsertForm.querySelector('input').focus();
-  console.log('started!');
 });
 
 socket.on('stop', () => {
@@ -195,4 +205,8 @@ socket.on('stop', () => {
 
 socket.on('checking', () => {
   matchStatus.now = matchStatus.checking;
+});
+
+socket.on('finished', scores => {
+  showScores(scores);
 });

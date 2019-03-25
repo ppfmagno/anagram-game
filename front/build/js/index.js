@@ -8503,8 +8503,6 @@ var addToMyWords = function addToMyWords(word, myWords) {
   if (isValidWord(word, selectedLetters) && !myWords.includes(word)) {
     myWords.push(word);
   }
-
-  console.log(myWords);
 };
 
 var isValidWord = function isValidWord(word, selectedLetters) {
@@ -8613,6 +8611,19 @@ var countToStop = function countToStop() {
   }, 1);
 };
 
+var showScores = function showScores(scores) {
+  var strings = [];
+  var player = 1;
+  scores.forEach(function (score) {
+    if (score.id === playerId) {
+      strings.push("Sua pontua\xE7\xE3o: ".concat(score.points, " - suas palavras v\xE1lidas: ").concat(score.words.join(', ')));
+    } else {
+      strings.push("Jogador ".concat(player++, ": ").concat(score.points, " - palavras v\xE1lidas: ").concat(score.words.join(', ')));
+    }
+  });
+  matchLogger.innerHTML = strings.join('</br>');
+};
+
 socket.on('connect', function () {
   playerId = socket.id;
   matchStatus.now = matchStatus.waiting;
@@ -8638,12 +8649,10 @@ socket.on('ready', function () {
 });
 socket.on('locked', function () {
   matchStatus.now = matchStatus.locked;
-  console.log('start in 2"');
 });
 socket.on('start', function () {
   matchStatus.now = matchStatus.start;
   wordInsertForm.querySelector('input').focus();
-  console.log('started!');
 });
 socket.on('stop', function () {
   var wordsToSend = {
@@ -8655,6 +8664,9 @@ socket.on('stop', function () {
 });
 socket.on('checking', function () {
   matchStatus.now = matchStatus.checking;
+});
+socket.on('finished', function (scores) {
+  showScores(scores);
 });
 
 },{"socket.io-client":35}]},{},[45]);

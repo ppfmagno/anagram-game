@@ -3,7 +3,7 @@ const io = require('socket.io')(server);
 const axios = require('axios');
 
 const rooms = io.sockets.adapter.rooms; // 'shortcut' (reference) to rooms
-const MAX_PLAYERS = 3; // max number of players for room
+const MAX_PLAYERS = 4; // max number of players for room
 const MAX_LETTERS = MAX_PLAYERS * 2; // max players times number of letters each player can select
 const WAITING_TIME = 5000; // time in milliseconds to wait when every player has selected its letters
 const LOCK_TIME = 2000; // time in milliseconds to lock letters; it's included in WAITING_TIME and should no be less than WAITING_TIME
@@ -23,9 +23,10 @@ io.on('connection', socket => {
   const roomName = allocatePlayer(socket);
   sendLetters(roomName);
   
-  if (rooms[roomName].length === MAX_PLAYERS) {
-    io.to(roomName).emit('full room', { foo: 'bar '});
-  }
+  // // to be used if room get's full
+  // if (rooms[roomName].length === MAX_PLAYERS) {
+  //   io.to(roomName).emit('full room', { foo: 'bar '});
+  // }
 
   socket.on('set letters', newLetters => {
     if (rooms[roomName].status === matchStatus.waiting){
@@ -51,7 +52,11 @@ io.on('connection', socket => {
       wordGroup.words = [...new Set([...wordGroup.words])];
       rooms[roomName].words.push(wordGroup);
       if (rooms[roomName].words.length === rooms[roomName].activePlayers.length) {
-        checkWords(roomName);
+        checkWords(roomName)
+          .then(() => {
+            io.to(roomName).emit(rooms[roomName].status, rooms[roomName].words);
+          })
+          .catch(err => console.error(err.message));
       }
     }
   });
@@ -154,45 +159,60 @@ const countDownToStop = roomName => {
   }, WORDS_TIME)
 }
 
-const checkWords = async roomName => {
-  const url = 'http://dicionario-aberto.net/search-json/';
-  let allWords = [];
-  // put all words sent by the players in a single array
-  for (const wordGroup of rooms[roomName].words) {
-    allWords = [...allWords, ...wordGroup.words]
-  }
-  // filter only unique words to request
-  rooms[roomName].wordsToCheck = [... new Set([...allWords])];
-  axios.all(rooms[roomName].wordsToCheck.map(word => {
-    return axios.request({
-      method: 'get',
-      baseURL: url,
-      url: encodeURI(word),
-      data: { word },
-      validateStatus: status => status < 500
+const checkWords = roomName => {
+  // return a promise so it doesn't have to handle the process of sending the results to the players
+  return new Promise((resolve, reject) => {
+    const url = 'http://dicionario-aberto.net/search-json/';
+    let allWords = [];
+    // put all words sent by the players in a single array
+    for (const wordGroup of rooms[roomName].words) {
+      allWords = [...allWords, ...wordGroup.words]
+    }
+    // filter only unique words to request
+    rooms[roomName].wordsToCheck = [... new Set([...allWords])];
+    // concurrent requests for each unique word
+    axios.all(rooms[roomName].wordsToCheck.map(word => {
+      return axios.request({
+        method: 'get',
+        baseURL: url,
+        url: encodeURI(word),
+        data: { word },
+        // don't treat res.status === 404 as an error
+        validateStatus: status => status < 500
+      });
+    }))
+    .then(responses => {
+      responses.forEach(res => {
+        const sentWord = JSON.parse(res.config.data).word;
+        // if word was found push to valid ones
+        if (res.status === 200) rooms[roomName].validWords.push(sentWord);
+        if (res.status === 404) rooms[roomName].invalidWords.push(sentWord);
+      });
+    })
+    .catch(err => {
+      reject(err);
+    })
+    .finally(() => {
+      scoreWords(roomName);
+      resolve();
     });
-  }))
-  .then(responses => {
-    responses.forEach(res => {
-      const sentWord = JSON.parse(res.config.data).word;
-      if (res.status === 200) rooms[roomName].validWords.push(sentWord);
-      if (res.status === 404) rooms[roomName].invalidWords.push(sentWord);
-    });
-  })
-  .catch(err => console.error(err.message))
-  .finally(() => scoreWords(roomName));
+  });
 }
 
 const scoreWords = roomName => {
+  // go throughout players words to give them points
   rooms[roomName].words.forEach(wordGroup => {
     wordGroup.points = 0;
-    wordGroup.words.forEach(word => {
+    wordGroup.words.forEach((word, index) => {
       if (rooms[roomName].validWords.includes(word)) {
         wordGroup.points += 10;
-        // TODO: send score to front
+      } else {
+        // remove invalid words from players words so it can be sent back
+        wordGroup.words.splice(index, 1)
       }
     });
   });
+  rooms[roomName].status = matchStatus.finished;
 }
 
 const countRooms = () => {
