@@ -53,7 +53,7 @@ const addToMyLetters = (letter, myLetters) => {
 const addToMyWords = (word, myWords) => {
   const selectedLetters = [...myLetters, ...othersLetters];
   word = word.toLowerCase();
-  if (isValidWord(word, selectedLetters)) {
+  if (isValidWord(word, selectedLetters) && !myWords.includes(word)) {
     myWords.push(word);
   }
   console.log(myWords);
@@ -188,7 +188,7 @@ socket.on('start', () => {
 });
 
 socket.on('stop', () => {
-  const wordsToSend = { id: playerId, words: myWords }
+  const wordsToSend = { id: playerId, words: [... new Set([...myWords])] }
   matchStatus.now = matchStatus.stop;
   socket.emit('set words', wordsToSend);
 });

@@ -8500,7 +8500,7 @@ var addToMyWords = function addToMyWords(word, myWords) {
   var selectedLetters = [].concat(_toConsumableArray(myLetters), _toConsumableArray(othersLetters));
   word = word.toLowerCase();
 
-  if (isValidWord(word, selectedLetters)) {
+  if (isValidWord(word, selectedLetters) && !myWords.includes(word)) {
     myWords.push(word);
   }
 
@@ -8648,7 +8648,7 @@ socket.on('start', function () {
 socket.on('stop', function () {
   var wordsToSend = {
     id: playerId,
-    words: myWords
+    words: _toConsumableArray(new Set(_toConsumableArray(myWords)))
   };
   matchStatus.now = matchStatus.stop;
   socket.emit('set words', wordsToSend);
